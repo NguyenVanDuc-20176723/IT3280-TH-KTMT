@@ -1,0 +1,60 @@
+.data
+S:	.space	50
+Message:	.asciiz "Moi ban nhap vao: "
+
+.text
+main:
+get_string:
+	li	$v0	54
+	la	$a0	Message
+	la	$a1	S
+	la	$a2	50
+	syscall
+end_get_string:
+get_length:
+	la	$s0, S		#s0 lay dia chi co so cua S
+	addi	$s1, $0, 0	# s1 = length = 0
+	addi	$s2, $0, 0	# s2 = i = 0
+	addi	$s3, $0, 10	# '\n' trong ascii co gia tri 10(co so 10)
+				# s3 = 10
+check_char:
+	add	$t0, $s0, $s2		# t0 lay dia chi S[i]
+	lb	$t1, 0($t0)		# t1 = S[i]
+	seq	$t8, $t1, $0		# t8 = 1 neu t1 = S[i] = 0 ('\0')
+	seq	$t9, $t1, $s3		# t9 = 1 neu t1 = s3 = 10  ('\n')
+	or	$s7, $t8, $t9		# s7 = 1 neu t8 = 1 hoac t9 = 1
+	bne	$s7, $0, end_check	# neu s7 = 1 thi branch end_check
+	addi	$s1, $s1, 1		# length += 1
+	addi	$s2, $s2, 1		# i += 1
+	j	check_char
+end_check:
+	jal	is_palindrome
+exit:	li	$v0, 10
+	syscall
+end_main:
+is_palindrome:
+	addi	$sp, $sp, -4		# cap phat 4 byte cho stack
+	sw	$s2, -4($sp)		# luu s2 vao stack
+	addi	$t2, $0, 0		#t2 = return_value = 0
+	beq	$s1, $0, not_palindrome	# neu length = 0 thi branch not_palindrome
+	addi	$t3, $0, 2		# t3 = 2
+	div	$s1, $t3		# s1/t3
+	mflo	$t4			# t4 = lo (phan nguyen cua s1/t3)
+	addi	$s2, $0, 0		# i = 0
+for:	blt	$t4, $s2, end_for	# neu i > length/2 thi branch end_for
+	add	$t5, $s0, $s2		# t5 lay dia chi S[i]
+	lb	$s4, 0($t5)		# s4 = S[i]
+	addi	$t6, $s2, 1		# t6 = i + 1
+	sub	$t6, $s1, $t6		# t6 = length - t6 = length - i - 1
+	add	$t6, $t6, $s0		# t6 luu dia chi S[length - i - 1]
+	lb	$s5, 0($t6)		# s5 = S[length - i - 1]
+	bne	$s4, $s5, not_palindrome # neu S[i] != S[length - i -1] thi branch not_palindrome
+tang_i:	addi	$s2,$s2,1		# i += 1
+	j	for
+not_palindrome:
+	addi	$t2, $0, 1		# t2 = return_value = 1
+end_for:
+	lw	$s2, -4($sp)		# tra lai gia tri cho $s2
+	addi	$sp, $sp, 4		# giai phong stack
+end_is_palindrome:
+	jr	$ra
